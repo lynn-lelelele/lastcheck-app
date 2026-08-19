@@ -10,6 +10,7 @@ class LocalRepo {
   static const _keyPlaces = 'lastcheck_places';
   static const _keyTemplates = 'lastcheck_templates';
   static const _keyCurrentPlace = 'lastcheck_current_place_id';
+  static const _keyGuideSeen = 'lastcheck_guide_seen';
 
   final SharedPreferences _prefs;
 
@@ -47,9 +48,17 @@ class LocalRepo {
     _prefs.setString(_keyCurrentPlace, id);
   }
 
+  bool getGuideSeen() => _prefs.getBool(_keyGuideSeen) ?? false;
+
+  void setGuideSeen() {
+    _prefs.setBool(_keyGuideSeen, true);
+  }
+
   void clearAll() {
     _prefs.remove(_keyPlaces);
     _prefs.remove(_keyTemplates);
     _prefs.remove(_keyCurrentPlace);
+    _prefs.remove(_keyGuideSeen);
   }
 }
+

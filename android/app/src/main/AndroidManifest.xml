@@ -1,5 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application
+﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<application
         android:label="lastcheck_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
@@ -43,3 +46,5 @@
         </intent>
     </queries>
 </manifest>
+
+

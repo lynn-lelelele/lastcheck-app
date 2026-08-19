@@ -1,5 +1,4 @@
-﻿import '../models/place.dart';
-import 'place_service.dart';
+﻿import 'place_service.dart';
 
 /// 出门清单服务：清单物品的读取、添加、删除、勾选状态。
 /// 对应小程序版 services/checklistService.js。
