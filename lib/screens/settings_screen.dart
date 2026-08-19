@@ -22,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   LocationPermission _permission = LocationPermission.denied;
   bool _serviceEnabled = false;
   bool _notifEnabled = false;
+  int _geofenceCount = 0;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshPermission();
       _refreshNotif();
+      _refreshGeofence();
     });
   }
 
@@ -72,6 +74,27 @@ class _SettingsScreenState extends State<SettingsScreen>
       await Geolocator.openAppSettings();
       await _refreshNotif();
     }
+  }
+
+  Future<void> _refreshGeofence() async {
+    final n = await ServicesScope.of(context).geofence.getRegisteredCount();
+    if (!mounted) return;
+    setState(() => _geofenceCount = n);
+  }
+
+  Future<void> _testNotification() async {
+    await ServicesScope.of(context).notifications.showReminder(
+        '测试地点', '这是管家发的测试通知：能看到这条，说明通知通道是通的。');
+    if (!mounted) return;
+    _toast('已发送测试通知，请下拉通知栏查看');
+  }
+
+  Future<void> _resyncGeofence() async {
+    final svc = ServicesScope.of(context);
+    await svc.geofence.sync(svc.places.list());
+    await _refreshGeofence();
+    if (!mounted) return;
+    _toast('围栏已重新同步');
   }
 
   Future<void> _onRequestAuth() async {
@@ -182,6 +205,33 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           const SizedBox(height: 12),
           _SettingCard(
+            icon: Icons.campaign_outlined,
+            title: '测试通知',
+            subtitle: '立刻发一条系统通知，检验通知通道是否通畅',
+            onTap: _testNotification,
+            trailing: const Icon(Icons.notifications_active_rounded,
+                color: AppColors.primary, size: 28),
+          ),
+          const SizedBox(height: 12),
+          _SettingCard(
+            icon: Icons.radar_rounded,
+            title: '围栏状态',
+            subtitle: '已注册 $_geofenceCount 个地点的围栏（点击重新同步）',
+            onTap: _resyncGeofence,
+            trailing: const Icon(Icons.refresh_rounded,
+                color: AppColors.primary, size: 24),
+          ),
+          const SizedBox(height: 12),
+          _SettingCard(
+            icon: Icons.battery_saver_outlined,
+            title: '后台运行',
+            subtitle: '建议在系统设置里允许 LastCheck 后台运行、自启动（国产手机必查）',
+            onTap: () => Geolocator.openAppSettings(),
+            trailing: const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textGrey, size: 22),
+          ),
+          const SizedBox(height: 12),
+          _SettingCard(
             icon: Icons.notifications_active_outlined,
             title: '演示出门提醒',
             subtitle: '模拟一次「离开围栏」推送，看清单页效果',
@@ -231,16 +281,20 @@ class _SettingCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget trailing;
+  final VoidCallback? onTap;
   const _SettingCard({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.trailing,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: AppDeco.card(radius: 18),
       child: Row(
@@ -266,9 +320,12 @@ class _SettingCard extends StatelessWidget {
           trailing,
         ],
       ),
+    ),
     );
   }
 }
+
+
 
 
 

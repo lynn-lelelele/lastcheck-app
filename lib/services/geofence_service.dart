@@ -50,6 +50,18 @@ class GeofenceService {
     }
   }
 
+  /// 当前已注册的围栏数量（诊断用）。
+  Future<int> getRegisteredCount() async {
+    if (!_initialized) return 0;
+    try {
+      final ids =
+          await NativeGeofenceManager.instance.getRegisteredGeofenceIds();
+      return ids.length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Future<void> clearAll() async {
     if (!_initialized) return;
     try {
@@ -88,3 +100,4 @@ Future<void> geofenceTriggered(GeofenceCallbackParams params) async {
     }
   }
 }
+
