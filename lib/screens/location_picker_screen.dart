@@ -3,10 +3,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../core/gcj.dart';
 import '../services/geo_service.dart';
 import '../theme.dart';
 
-/// 位置选择结果。
+/// 位置选择结果（WGS-84 坐标）。
 class PickedLocation {
   final double latitude;
   final double longitude;
@@ -16,12 +17,12 @@ class PickedLocation {
       {this.address = ''});
 }
 
-/// 长沙示例坐标（小程序版演示位置）。
+/// 长沙示例坐标（小程序版演示位置，WGS-84）。
 const kSampleLat = 28.228209;
 const kSampleLng = 112.938814;
 
-/// 全屏地图选点：点按地图放置标记，或用当前位置 / 示例位置。
-/// 选点后自动反查地址，显示在地图顶部。
+/// 全屏地图选点：高德地图瓦片 + 点按放置标记 + 当前位置 / 示例位置。
+/// 自动处理 GCJ-02 偏移，点哪儿标记就落哪儿。
 class LocationPickerScreen extends StatefulWidget {
   final String title;
   const LocationPickerScreen({super.key, this.title = '选择位置'});
@@ -31,16 +32,31 @@ class LocationPickerScreen extends StatefulWidget {
 }
 
 class _LocationPickerScreenState extends State<LocationPickerScreen> {
-  LatLng _point = const LatLng(kSampleLat, kSampleLng);
+  final MapController _mapCtrl = MapController();
+
+  /// 真实坐标（WGS-84，返回给上层存库）
+  LatLng _wgs = const LatLng(kSampleLat, kSampleLng);
   bool _locating = false;
   String? _locateError;
   String _address = '';
   bool _resolving = false;
   int _geoToken = 0;
 
+  /// 地图展示坐标（GCJ-02，对齐高德瓦片）
+  LatLng get _display =>
+      wgsToGcj(_wgs.latitude, _wgs.longitude);
+
   @override
   void initState() {
     super.initState();
+    _reverseGeocode();
+  }
+
+  void _setWgs(LatLng wgs, {bool recenter = false}) {
+    setState(() => _wgs = wgs);
+    if (recenter) {
+      _mapCtrl.move(_display, 16);
+    }
     _reverseGeocode();
   }
 
@@ -50,22 +66,13 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       _resolving = true;
       _locateError = null;
     });
-    final result = await GeoService.reverseGeocode(
-        _point.latitude, _point.longitude);
+    final result =
+        await GeoService.reverseGeocode(_wgs.latitude, _wgs.longitude);
     if (!mounted || token != _geoToken) return;
     setState(() {
       _resolving = false;
-      if (result != null) {
-        _address = result.address;
-      } else {
-        _address = '';
-      }
+      _address = result?.address ?? '';
     });
-  }
-
-  void _setPoint(LatLng p) {
-    setState(() => _point = p);
-    _reverseGeocode();
   }
 
   Future<void> _useCurrent() async {
@@ -90,7 +97,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       setState(() => _locating = false);
-      _setPoint(LatLng(pos.latitude, pos.longitude));
+      _setWgs(LatLng(pos.latitude, pos.longitude), recenter: true);
     } catch (e) {
       setState(() {
         _locating = false;
@@ -99,12 +106,13 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
   }
 
-  void _useSample() => _setPoint(const LatLng(kSampleLat, kSampleLng));
+  void _useSample() =>
+      _setWgs(const LatLng(kSampleLat, kSampleLng), recenter: true);
 
   void _confirm() {
     Navigator.of(context).pop(PickedLocation(
-      _point.latitude,
-      _point.longitude,
+      _wgs.latitude,
+      _wgs.longitude,
       'map',
       address: _address,
     ));
@@ -114,7 +122,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     if (_locateError != null) return _locateError!;
     if (_resolving) return '正在解析地址…';
     if (_address.isNotEmpty) return _address;
-    return '${_point.latitude.toStringAsFixed(5)}, ${_point.longitude.toStringAsFixed(5)}';
+    return '${_wgs.latitude.toStringAsFixed(5)}, ${_wgs.longitude.toStringAsFixed(5)}';
   }
 
   @override
@@ -124,20 +132,26 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       body: Stack(
         children: [
           FlutterMap(
+            mapController: _mapCtrl,
             options: MapOptions(
-              initialCenter: _point,
+              initialCenter: _display,
               initialZoom: 16,
-              onTap: (tapPosition, latLng) => _setPoint(latLng),
+              onTap: (tapPosition, latLng) {
+                // 地图点按返回的是 GCJ-02 下的视觉坐标，反算成 WGS-84 存储
+                _setWgs(gcjToWgs(latLng.latitude, latLng.longitude));
+              },
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',
+                subdomains: const ['1', '2', '3', '4'],
                 userAgentPackageName: 'com.lastcheck.lastcheck_app',
               ),
               MarkerLayer(
                 markers: [
                   Marker(
-                    point: _point,
+                    point: _display,
                     width: 44,
                     height: 44,
                     child: const Icon(
@@ -233,3 +247,4 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     );
   }
 }
+

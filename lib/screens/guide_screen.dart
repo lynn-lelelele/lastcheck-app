@@ -162,7 +162,7 @@ class _GuideScreenState extends State<GuideScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('开启通知'),
-          content: const Text('通知没开启的话，离开围栏时 App 无法提醒你。可以到系统设置里手动打开。'),
+          content: const Text('通知没开启的话，离开围栏时 App 无法提醒你。\\n注意：后台弹窗不是通知，请到系统设置打开「允许通知」。'),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
@@ -408,6 +408,7 @@ class _Done extends StatelessWidget {
     );
   }
 }
+
 
 
 

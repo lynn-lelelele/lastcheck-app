@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('手动开启通知'),
-        content: const Text('部分手机需要到系统设置里手动打开通知权限。'),
+        content: const Text('注意：后台弹窗（悬浮窗）不是通知权限。\\n请到 系统设置 → 应用 → 通知，打开「允许通知」。'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -169,7 +169,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           _SettingCard(
             icon: Icons.notifications_none_rounded,
             title: '通知权限',
-            subtitle: _notifEnabled ? '已开启（离开围栏会弹通知）' : '未开启（离开围栏无法弹通知）',
+            subtitle: _notifEnabled
+                ? '已开启（离开围栏会弹通知）'
+                : '未开启（需在系统设置打开「通知」，不是「后台弹窗」）',
             trailing: _notifEnabled
                 ? const Icon(Icons.check_circle_rounded,
                     color: AppColors.success)
@@ -268,6 +270,8 @@ class _SettingCard extends StatelessWidget {
     );
   }
 }
+
+
 
 
 
