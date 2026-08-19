@@ -6,6 +6,7 @@ import '../models/place.dart';
 import '../theme.dart';
 import 'location_picker_screen.dart';
 import '../widgets/island_header.dart';
+import '../widgets/item_editor_sheet.dart';
 import '../widgets/name_sheet.dart';
 
 class TemplatesScreen extends StatefulWidget {
@@ -34,8 +35,25 @@ class _TemplatesScreenState extends State<TemplatesScreen>
   void _load() {
     setState(() {
       _presets = sceneTypes;
-      _custom = _svc.repo.getTemplates();
+      _custom = _svc.repo
+          .getTemplates()
+          .where((t) => !(t['id'] as String).startsWith('preset_'))
+          .toList();
     });
+  }
+
+  /// 预设清单的物品：若有用户编辑过的覆盖，则用覆盖版。
+  List<String> _presetItems(String key) {
+    final override = _svc.repo
+        .getTemplates()
+        .where((t) => t['id'] == 'preset_$key')
+        .firstOrNull;
+    if (override != null) {
+      final items = (override['items'] as List?) ?? [];
+      if (items.isNotEmpty) return items.cast<String>();
+    }
+    final p = sceneTypes.where((x) => x.key == key).firstOrNull;
+    return p?.items ?? const [];
   }
 
   Future<void> _onNew() async {
@@ -64,7 +82,7 @@ class _TemplatesScreenState extends State<TemplatesScreen>
     } else {
       final p = _presets.where((x) => x.key == key).firstOrNull;
       if (p == null) return;
-      items = p.items;
+      items = _presetItems(key!);
       label = p.label;
     }
     if (!mounted) return;
@@ -165,6 +183,38 @@ class _TemplatesScreenState extends State<TemplatesScreen>
     _toast('已创建「$label」，清单已套用');
   }
 
+  Future<void> _editPreset(ScenePreset p) async {
+    final edited = await showItemEditor(
+      context,
+      title: p.label,
+      initialItems: _presetItems(p.key),
+    );
+    if (edited == null || !mounted) return;
+    final list = _svc.repo.getTemplates();
+    list.removeWhere((t) => t['id'] == 'preset_${p.key}');
+    list.add({'id': 'preset_${p.key}', 'name': p.label, 'items': edited});
+    _svc.repo.saveTemplates(list);
+    _load();
+    _toast('已更新「${p.label}」清单');
+  }
+
+  Future<void> _editCustom(String id) async {
+    final t = _custom.where((x) => x['id'] == id).firstOrNull;
+    if (t == null) return;
+    final name = (t['name'] as String?) ?? '清单';
+    final edited = await showItemEditor(
+      context,
+      title: name,
+      initialItems: ((t['items'] as List?) ?? []).cast<String>(),
+    );
+    if (edited == null || !mounted) return;
+    _svc.repo.saveTemplates(_custom
+        .map((x) => x['id'] == id ? {...x, 'items': edited} : x)
+        .toList());
+    _load();
+    _toast('已更新「$name」清单');
+  }
+
   void _onDeleteCustom(String id) {
     _svc.repo.saveTemplates(_custom.where((x) => x['id'] != id).toList());
     _load();
@@ -201,8 +251,9 @@ class _TemplatesScreenState extends State<TemplatesScreen>
           for (final p in _presets)
             _TemplateCard(
               name: p.label,
-              items: p.items,
+              items: _presetItems(p.key),
               onUse: () => _onUse(key: p.key),
+              onEdit: () => _editPreset(p),
             ),
           if (_custom.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -214,6 +265,7 @@ class _TemplatesScreenState extends State<TemplatesScreen>
                 items: ((t['items'] as List?) ?? []).cast<String>(),
                 custom: true,
                 onUse: () => _onUse(customId: t['id'] as String),
+                onEdit: () => _editCustom(t['id'] as String),
                 onDelete: () => _onDeleteCustom(t['id'] as String),
               ),
           ],
@@ -248,12 +300,14 @@ class _TemplateCard extends StatelessWidget {
   final List<String> items;
   final VoidCallback onUse;
   final bool custom;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   const _TemplateCard({
     required this.name,
     required this.items,
     required this.onUse,
     this.custom = false,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -283,6 +337,13 @@ class _TemplateCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (onEdit != null)
+                IconButton(
+                  tooltip: '编辑物品',
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined,
+                      color: AppColors.textGrey, size: 20),
+                ),
               if (custom && onDelete != null)
                 IconButton(
                   onPressed: onDelete,
@@ -332,6 +393,7 @@ class _TemplateCard extends StatelessWidget {
     );
   }
 }
+
 
 
 

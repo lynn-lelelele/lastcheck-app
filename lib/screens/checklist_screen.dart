@@ -623,7 +623,7 @@ class _CelebrationOverlay extends StatelessWidget {
           duration: const Duration(milliseconds: 500),
           curve: Curves.elasticOut,
           builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
-          child: const Text('🎉 全部确认已带！',
+          child: const Text('全部确认已带！',
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -633,6 +633,7 @@ class _CelebrationOverlay extends StatelessWidget {
     );
   }
 }
+
 
 
 
