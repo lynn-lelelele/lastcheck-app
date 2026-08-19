@@ -226,7 +226,7 @@ class _ChecklistScreenState extends State<ChecklistScreen>
                     p.name,
                     style: TextStyle(
                       color: selected ? Colors.white : AppColors.textDark,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -628,3 +628,4 @@ class _CelebrationOverlay extends StatelessWidget {
     );
   }
 }
+

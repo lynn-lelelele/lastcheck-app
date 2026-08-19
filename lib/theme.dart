@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
 /// LastCheck 暖色主题：延续小程序版米白 + 棕的视觉。
+/// 字体：思源黑体（Source Han Sans SC），正文 Medium、标题 Bold，去 AI 味的轻盈感。
 class AppColors {
   static const bg = Color(0xFFF7F4EE);
   static const primary = Color(0xFFB08968);
@@ -19,7 +20,7 @@ ThemeData buildTheme() {
     brightness: Brightness.light,
     surface: AppColors.card,
   );
-  return ThemeData(
+  final theme = ThemeData(
     useMaterial3: true,
     fontFamily: 'SourceHanSansSC',
     colorScheme: scheme,
@@ -34,7 +35,7 @@ ThemeData buildTheme() {
       titleTextStyle: TextStyle(
         color: AppColors.textDark,
         fontSize: 18,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
     ),
     cardTheme: const CardThemeData(
@@ -53,7 +54,7 @@ ThemeData buildTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -64,7 +65,7 @@ ThemeData buildTheme() {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -73,5 +74,24 @@ ThemeData buildTheme() {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
-}
 
+  // 全局字重上调：正文 Medium、标题 Bold，让界面更利落、更有设计感。
+  return theme.copyWith(
+    textTheme: theme.textTheme.copyWith(
+      bodyLarge:
+          theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+      bodyMedium:
+          theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+      bodySmall:
+          theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+      titleLarge:
+          theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      titleMedium:
+          theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      titleSmall:
+          theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+      labelLarge:
+          theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+    ),
+  );
+}

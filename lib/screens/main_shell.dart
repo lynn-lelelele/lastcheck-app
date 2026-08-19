@@ -179,7 +179,7 @@ class _NavItem extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             style: TextStyle(
               fontSize: 11,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected ? AppColors.primaryDark : AppColors.textGrey,
             ),
             child: Text(label),
@@ -189,3 +189,4 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+
