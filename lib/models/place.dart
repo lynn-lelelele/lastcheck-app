@@ -51,4 +51,35 @@ class Place {
       createdAt: createdAt,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'address': address,
+        'latitude': latitude,
+        'longitude': longitude,
+        'radius': radius,
+        'items': items,
+        'checkedMap': checkedMap.map((k, v) => MapEntry(k.toString(), v)),
+        'sceneType': sceneType,
+        'poiName': poiName,
+        'createdAt': createdAt.toIso8601String(),
+      };
+
+  factory Place.fromJson(Map<String, dynamic> json) {
+    return Place(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      address: (json['address'] as String?) ?? '',
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      radius: ((json['radius'] as num?) ?? 100).toDouble(),
+      items: ((json['items'] as List?) ?? []).cast<String>(),
+      checkedMap: ((json['checkedMap'] as Map?) ?? {})
+          .map((k, v) => MapEntry(int.parse(k as String), v as bool)),
+      sceneType: json['sceneType'] as String?,
+      poiName: json['poiName'] as String?,
+      createdAt: DateTime.tryParse((json['createdAt'] as String?) ?? '') ?? DateTime.now(),
+    );
+  }
 }
