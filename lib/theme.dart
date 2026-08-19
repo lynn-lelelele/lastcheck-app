@@ -21,7 +21,7 @@ ThemeData buildTheme() {
   );
   return ThemeData(
     useMaterial3: true,
-    fontFamily: 'LXGWWenKai',
+    fontFamily: 'SourceHanSansSC',
     colorScheme: scheme,
     scaffoldBackgroundColor: AppColors.bg,
     splashFactory: InkRipple.splashFactory,
@@ -74,3 +74,4 @@ ThemeData buildTheme() {
     ),
   );
 }
+
