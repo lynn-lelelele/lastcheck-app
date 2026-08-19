@@ -81,6 +81,83 @@ class _TemplatesScreenState extends State<TemplatesScreen>
       items = p.items;
       label = p.label;
     }
+    if (!mounted) return;
+    final existing = _svc.places.list();
+    if (existing.isEmpty) {
+      // 还没有地点：直接创建新地点
+      await _createWithLocation(label, items);
+      return;
+    }
+    // 已有地点：让用户选择「套用到已有地点」还是「创建新地点」
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                '「$label」清单要套用到哪里？',
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textDark),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.drive_file_move_outline, color: AppColors.primary),
+              title: const Text('套用到已有地点'),
+              subtitle: Text('覆盖该地点的现有清单（${existing.length} 个地点可选）'),
+              onTap: () => Navigator.pop(ctx, 'apply'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_location_alt_outlined, color: AppColors.primary),
+              title: const Text('创建新地点'),
+              subtitle: const Text('用这个清单新建一个常去地点'),
+              onTap: () => Navigator.pop(ctx, 'create'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !mounted) return;
+    if (action == 'create') {
+      await _createWithLocation(label, items);
+      return;
+    }
+    // 选择要套用的已有地点
+    final pid = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text('选择要套用的地点',
+                  style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textDark)),
+            ),
+            for (final p in existing)
+              ListTile(
+                leading: const Icon(Icons.place_rounded, color: AppColors.primary),
+                title: Text(p.name),
+                subtitle: Text('当前 ${p.items.length} 件物品'),
+                onTap: () => Navigator.pop(ctx, p.id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (pid == null || !mounted) return;
+    final name = _svc.places.findById(pid)?.name ?? '';
+    _svc.places.update(pid, (p) => p.copyWith(items: items, checkedMap: {}));
+    _svc.places.setCurrentPlaceId(pid);
+    _toast('已把「$label」清单套用到「$name」');
+  }
+
+  Future<void> _createWithLocation(String label, List<String> items) async {
     final picked = await Navigator.of(context).push<PickedLocation>(
       MaterialPageRoute(
         builder: (_) => LocationPickerScreen(title: '给「$label」选个位置'),

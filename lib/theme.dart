@@ -21,6 +21,7 @@ ThemeData buildTheme() {
   );
   return ThemeData(
     useMaterial3: true,
+    fontFamily: 'LXGWWenKai',
     colorScheme: scheme,
     scaffoldBackgroundColor: AppColors.bg,
     splashFactory: InkRipple.splashFactory,
