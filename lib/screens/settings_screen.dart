@@ -76,6 +76,86 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  Future<void> _requestIgnoreBattery() async {
+    final go = await showButlerDialog(
+      context,
+      title: '再帮您放行一下后台',
+      content: '为了出门提醒不被系统杀掉，请到系统设置里允许 LastCheck 后台运行、自启动（国产手机必查）。',
+      confirm: '去系统设置',
+      cancel: '稍后再说',
+    );
+    if (go == true) {
+      await Geolocator.openAppSettings();
+    }
+  }
+
+  Future<void> _openHealthSheet() async {
+    final locAlways =
+        _permission == LocationPermission.always;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        padding: const EdgeInsets.all(22),
+        decoration: AppDeco.island(radius: 28),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('权限体检',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark)),
+              const SizedBox(height: 4),
+              const Text('缺哪项点哪项，管家带您去补齐',
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.textGrey)),
+              const SizedBox(height: 12),
+              _HealthRow(
+                icon: Icons.location_on_outlined,
+                label: '定位（始终允许）',
+                ok: locAlways,
+                onFix: () {
+                  Navigator.pop(ctx);
+                  _onRequestAuth();
+                },
+              ),
+              _HealthRow(
+                icon: Icons.notifications_none_rounded,
+                label: '通知（允许通知）',
+                ok: _notifEnabled,
+                onFix: () {
+                  Navigator.pop(ctx);
+                  _onRequestNotif();
+                },
+              ),
+              _HealthRow(
+                icon: Icons.battery_saver_outlined,
+                label: '后台（允许运行/自启动）',
+                ok: false,
+                onFix: () {
+                  Navigator.pop(ctx);
+                  _requestIgnoreBattery();
+                },
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('关闭',
+                    style: TextStyle(color: AppColors.textGrey)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _refreshGeofence() async {
     final n = await ServicesScope.of(context).geofence.getRegisteredCount();
     if (!mounted) return;
@@ -175,6 +255,15 @@ class _SettingsScreenState extends State<SettingsScreen>
         padding: const EdgeInsets.all(16),
         children: [
           _SettingCard(
+            icon: Icons.health_and_safety_outlined,
+            title: '权限体检',
+            subtitle: '定位${_permission == LocationPermission.always ? "✓" : "✗"}  通知${_notifEnabled ? "✓" : "✗"}  后台去设置放行（点开逐项补齐）',
+            onTap: _openHealthSheet,
+            trailing: const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textGrey, size: 22),
+          ),
+          const SizedBox(height: 12),
+          _SettingCard(
             icon: Icons.location_on_outlined,
             title: '定位权限',
             subtitle: _serviceEnabled ? authText : '系统定位服务未开启',
@@ -223,12 +312,22 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           const SizedBox(height: 12),
           _SettingCard(
+            icon: Icons.bolt_outlined,
+            title: '耗电说明',
+            subtitle: '本 App 用系统级围栏，不持续后台定位，耗电极低（约 1%/天）',
+            trailing: const Icon(Icons.check_circle_outline_rounded,
+                color: AppColors.success, size: 22),
+          ),
+          const SizedBox(height: 12),
+          _SettingCard(
             icon: Icons.battery_saver_outlined,
             title: '后台运行',
-            subtitle: '建议在系统设置里允许 LastCheck 后台运行、自启动（国产手机必查）',
-            onTap: () => Geolocator.openAppSettings(),
-            trailing: const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textGrey, size: 22),
+            subtitle: '请求系统忽略电池优化，围栏才不会被杀掉（点按跳系统设置）',
+            trailing: OutlinedButton(
+              onPressed: _requestIgnoreBattery,
+              style: OutlinedButton.styleFrom(minimumSize: const Size(84, 38)),
+              child: const Text('一键放行'),
+            ),
           ),
           const SizedBox(height: 12),
           _SettingCard(
@@ -330,6 +429,53 @@ class _SettingCard extends StatelessWidget {
 
 
 
+
+
+
+
+
+
+class _HealthRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool ok;
+  final VoidCallback onFix;
+  const _HealthRow({
+    required this.icon,
+    required this.label,
+    required this.ok,
+    required this.onFix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: ok ? AppColors.success : AppColors.primary, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                  fontSize: 15, color: AppColors.textDark, fontWeight: FontWeight.w500),
+            ),
+          ),
+          if (ok)
+            const Icon(Icons.check_circle_rounded,
+                color: AppColors.success, size: 20)
+          else
+            OutlinedButton(
+              onPressed: onFix,
+              style: OutlinedButton.styleFrom(minimumSize: const Size(76, 36)),
+              child: const Text('去补齐'),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 
 
