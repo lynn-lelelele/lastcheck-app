@@ -15,18 +15,20 @@ class GeoService {
       final marks = await Geocoding().placemarkFromCoordinates(lat, lng);
       if (marks.isEmpty) return null;
       final p = marks.first;
-      final parts = <String>[
-        if (p.name != null && p.name!.isNotEmpty) p.name!,
-        if (p.street != null && p.street!.isNotEmpty) p.street!,
-        if (p.subLocality != null && p.subLocality!.isNotEmpty) p.subLocality!,
-        if (p.locality != null && p.locality!.isNotEmpty) p.locality!,
-        if (p.administrativeArea != null && p.administrativeArea!.isNotEmpty)
-          p.administrativeArea!,
-      ];
-      if (parts.isEmpty) return null;
-      return GeoResult(parts.join(' '), p.name);
+      // 只要具体单位/小区名，不拼一长串省市区
+      String? short;
+      if (p.name != null && p.name!.isNotEmpty) {
+        short = p.name;
+      } else if (p.street != null && p.street!.isNotEmpty) {
+        short = p.street;
+      } else if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+        short = p.subLocality;
+      }
+      if (short == null || short.isEmpty) return null;
+      return GeoResult(short, p.name);
     } catch (_) {
       return null;
     }
   }
 }
+

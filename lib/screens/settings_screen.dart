@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../app_services.dart';
 import '../theme.dart';
+import '../widgets/butler_dialog.dart';
 import '../widgets/island_header.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -56,24 +57,16 @@ class _SettingsScreenState extends State<SettingsScreen>
     await _refreshNotif();
     if (!mounted) return;
     if (ok) {
-      _toast('通知已开启');
+      _toast('好的，谢谢您');
       return;
     }
-    // 系统弹窗被跳过/已拒绝时，引导去系统设置手动开启
-    final go = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('手动开启通知'),
-        content: const Text('注意：后台弹窗（悬浮窗）不是通知权限。\\n请到 系统设置 → 应用 → 通知，打开「允许通知」。'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('暂不')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('去系统设置')),
-        ],
-      ),
+    // 系统弹窗被跳过/已拒绝时，管家式引导去系统设置手动开启
+    final go = await showButlerDialog(
+      context,
+      title: '还想再麻烦您一件事',
+      content: '通知权限就像我递给您的小纸条：平时绝不打扰，只在您要出门时递一张清单。\n请到 系统设置 → 应用 → LastCheck → 通知，打开「允许通知」。',
+      confirm: '去系统设置',
+      cancel: '稍后再说',
     );
     if (go == true) {
       await Geolocator.openAppSettings();
@@ -82,6 +75,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _onRequestAuth() async {
+    final go = await showButlerDialog(
+      context,
+      title: '请允许我照顾您的出门小事',
+      content: '为了能在您离开常去地点时及时提醒，我需要一直知道您的大概位置。\n请选择「始终允许」——我平时绝不打扰您，位置也只在本机用来判断围栏。',
+    );
+    if (!mounted || go != true) return;
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -89,11 +88,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     await _refreshPermission();
     if (!mounted) return;
     if (permission == LocationPermission.deniedForever) {
-      _toast('定位被永久拒绝，请到系统设置里开启');
+      _toast('定位被永久拒绝了，可到系统设置里重新开启');
     } else if (_authorized) {
-      _toast('已授权');
+      _toast('好的，谢谢您');
     } else {
-      _toast('未授权，仍可手动核对清单');
+      _toast('没关系，仍可手动核对清单');
     }
   }
 
@@ -270,6 +269,8 @@ class _SettingCard extends StatelessWidget {
     );
   }
 }
+
+
 
 
 

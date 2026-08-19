@@ -6,6 +6,7 @@ import '../app_services.dart';
 import '../models/place.dart';
 import '../theme.dart';
 import 'location_picker_screen.dart';
+import '../widgets/butler_dialog.dart';
 import '../widgets/name_sheet.dart';
 
 /// 场景 → 默认物品（focus=random 时使用）。
@@ -144,6 +145,17 @@ class _GuideScreenState extends State<GuideScreen> {
   }
 
   Future<void> _requestLocationPermission() async {
+    // 管家式引导：先讲清逻辑，再请用户选「始终允许」
+    final go = await showButlerDialog(
+      context,
+      title: '请允许我照顾您的出门小事',
+      content: '为了能在您离开家/公司时及时提醒带齐东西，我需要一直知道您的大概位置。\n请选择「始终允许」——我平时绝不打扰您，位置也只在本机用来判断围栏。',
+    );
+    if (!mounted) return;
+    if (go != true) {
+      _toast('没关系，您随时可以在「设置」页开启定位');
+      return;
+    }
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -158,32 +170,24 @@ class _GuideScreenState extends State<GuideScreen> {
         await ServicesScope.of(context).notifications.requestPermission();
     if (!mounted) return;
     if (!notifOk) {
-      final go = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('开启通知'),
-          content: const Text('通知没开启的话，离开围栏时 App 无法提醒你。\\n注意：后台弹窗不是通知，请到系统设置打开「允许通知」。'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('暂不')),
-            FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('去设置')),
-          ],
-        ),
+      final goNotif = await showButlerDialog(
+        context,
+        title: '还想再麻烦您一件事',
+        content: '通知权限就像我递给您的小纸条：平时绝不打扰，只在您要出门时递一张清单。\n请到 系统设置 → 应用 → LastCheck → 通知，打开「允许通知」。',
+        confirm: '去系统设置',
+        cancel: '稍后再说',
       );
-      if (go == true) {
+      if (goNotif == true) {
         await Geolocator.openAppSettings();
       }
       if (!mounted) return;
     }
     if (permission == LocationPermission.deniedForever) {
-      _toast('定位被拒绝，可在「设置」页再开启');
+      _toast('定位被拒绝了，可以在「设置」页重新开启');
     } else if (permission == LocationPermission.denied) {
-      _toast('未开启定位，出门前自己核对清单就好');
+      _toast('暂时没开定位也没关系，出门前自己核对一下清单就好');
     } else {
-      _toast('已开启自动提醒：离开围栏时会弹出通知');
+      _toast('都安排好了：您只管出门，我来提醒');
     }
   }
 
@@ -271,7 +275,7 @@ class _Welcome extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            '健忘的人不会主动打开 App，一切由系统主动触发。\n离开常去地点时，自动提醒你检查携带清单。',
+            '您好，我是您的出门管家。\n您只管放心出门，离开常去地点时，我会提前把「该带的东西」递到您面前。',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 15, color: AppColors.textGrey, height: 1.6),
           ),
@@ -408,6 +412,8 @@ class _Done extends StatelessWidget {
     );
   }
 }
+
+
 
 
 
