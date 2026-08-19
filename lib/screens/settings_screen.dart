@@ -19,11 +19,15 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   LocationPermission _permission = LocationPermission.denied;
   bool _serviceEnabled = false;
+  bool _notifEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPermission());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshPermission();
+      _refreshNotif();
+    });
   }
 
   Future<void> _refreshPermission() async {
@@ -39,6 +43,19 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool get _authorized =>
       _permission == LocationPermission.always ||
       _permission == LocationPermission.whileInUse;
+
+  Future<void> _refreshNotif() async {
+    final ok = await ServicesScope.of(context).notifications.hasPermission();
+    if (!mounted) return;
+    setState(() => _notifEnabled = ok);
+  }
+
+  Future<void> _onRequestNotif() async {
+    final ok = await ServicesScope.of(context).notifications.requestPermission();
+    await _refreshNotif();
+    if (!mounted) return;
+    _toast(ok ? '通知已开启' : '未开启通知');
+  }
 
   Future<void> _onRequestAuth() async {
     var permission = await Geolocator.checkPermission();
@@ -81,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (ok != true) return;
     if (!mounted) return;
     ServicesScope.of(context).repo.clearAll();
+    ServicesScope.of(context).geofence.clearAll();
     _toast('已清空');
   }
 
@@ -118,6 +136,20 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onPressed: _onRequestAuth,
                     style: OutlinedButton.styleFrom(minimumSize: const Size(84, 38)),
                     child: const Text('去授权'),
+                  ),
+          ),
+          const SizedBox(height: 12),
+          _SettingCard(
+            icon: Icons.notifications_none_rounded,
+            title: '通知权限',
+            subtitle: _notifEnabled ? '已开启（离开围栏会弹通知）' : '未开启（离开围栏无法弹通知）',
+            trailing: _notifEnabled
+                ? const Icon(Icons.check_circle_rounded,
+                    color: AppColors.success)
+                : OutlinedButton(
+                    onPressed: _onRequestNotif,
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(84, 38)),
+                    child: const Text('去开启'),
                   ),
           ),
           const SizedBox(height: 12),
@@ -212,3 +244,5 @@ class _SettingCard extends StatelessWidget {
     );
   }
 }
+
+

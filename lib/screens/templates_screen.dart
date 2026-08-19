@@ -154,6 +154,7 @@ class _TemplatesScreenState extends State<TemplatesScreen>
     final name = _svc.places.findById(pid)?.name ?? '';
     _svc.places.update(pid, (p) => p.copyWith(items: items, checkedMap: {}));
     _svc.places.setCurrentPlaceId(pid);
+    _svc.geofence.sync(_svc.places.list());
     _toast('已把「$label」清单套用到「$name」');
   }
 
@@ -173,6 +174,7 @@ class _TemplatesScreenState extends State<TemplatesScreen>
           items: items,
         ));
     _svc.places.setCurrentPlaceId(place.id);
+    _svc.geofence.sync(_svc.places.list());
     _toast('已创建「$label」，清单已套用');
   }
 
@@ -343,3 +345,4 @@ class _TemplateCard extends StatelessWidget {
     );
   }
 }
+

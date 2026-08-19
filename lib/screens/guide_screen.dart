@@ -165,13 +165,20 @@ class _GuideScreenState extends State<GuideScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
+    // 后台定位：Android 10+ 围栏需要「始终允许」
+    if (permission == LocationPermission.whileInUse) {
+      permission = await Geolocator.requestPermission();
+    }
+    // 通知权限：Android 13+ 需要运行时授权
+    if (!mounted) return;
+    await ServicesScope.of(context).notifications.requestPermission();
     if (!mounted) return;
     if (permission == LocationPermission.deniedForever) {
       _toast('定位被拒绝，可在「设置」页再开启');
     } else if (permission == LocationPermission.denied) {
       _toast('未开启定位，出门前自己核对清单就好');
     } else {
-      _toast('定位已开启，离开常去地点时自动提醒');
+      _toast('已开启自动提醒：离开围栏时会弹出通知');
     }
   }
 
@@ -396,3 +403,5 @@ class _Done extends StatelessWidget {
     );
   }
 }
+
+

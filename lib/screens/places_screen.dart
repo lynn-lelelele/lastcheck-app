@@ -89,6 +89,7 @@ class _PlacesScreenState extends State<PlacesScreen>
           sceneType: preset?.key,
         ));
     _svc.places.setCurrentPlaceId(place.id);
+    _svc.geofence.sync(_svc.places.list());
     _load();
     _toast('已添加「$name」');
   }
@@ -162,6 +163,7 @@ class _PlacesScreenState extends State<PlacesScreen>
     );
     if (idx == null) return;
     _svc.places.update(p.id, (x) => x.copyWith(radius: idx.toDouble()));
+    _svc.geofence.sync(_svc.places.list());
     _load();
   }
 
@@ -183,6 +185,7 @@ class _PlacesScreenState extends State<PlacesScreen>
     );
     if (ok == true) {
       _svc.places.remove(p.id);
+      _svc.geofence.sync(_svc.places.list());
       _load();
     }
   }
@@ -328,3 +331,5 @@ class _TagButton extends StatelessWidget {
     );
   }
 }
+
+
