@@ -5,6 +5,8 @@ import '../data/presets.dart';
 import '../models/place.dart';
 import '../theme.dart';
 import 'location_picker_screen.dart';
+import '../widgets/island_header.dart';
+import '../widgets/name_sheet.dart';
 
 class TemplatesScreen extends StatefulWidget {
   const TemplatesScreen({super.key});
@@ -37,27 +39,11 @@ class _TemplatesScreenState extends State<TemplatesScreen>
   }
 
   Future<void> _onNew() async {
-    final ctrl = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('新建清单'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '如：图书馆、学校、出差包',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('创建'),
-          ),
-        ],
-      ),
+    final name = await showNameSheet(
+      context,
+      title: '新建清单',
+      hint: '如：图书馆、学校、出差包',
+      confirm: '创建',
     );
     if (name == null || name.isEmpty) return;
     final list = _svc.repo.getTemplates();
@@ -168,6 +154,7 @@ class _TemplatesScreenState extends State<TemplatesScreen>
     final place = _svc.places.add(Place(
           id: 'p_${DateTime.now().millisecondsSinceEpoch}',
           name: label,
+          address: picked.address,
           latitude: picked.latitude,
           longitude: picked.longitude,
           radius: 100,
@@ -193,15 +180,18 @@ class _TemplatesScreenState extends State<TemplatesScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('常用清单'),
-        actions: [
-          IconButton(
-            tooltip: '新建清单',
-            onPressed: _onNew,
-            icon: const Icon(Icons.add_rounded, color: AppColors.primaryDark),
-          ),
-        ],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(84),
+        child: IslandHeader(
+          title: '常用清单',
+          actions: [
+            IconButton(
+              tooltip: '新建清单',
+              onPressed: _onNew,
+              icon: const Icon(Icons.add_rounded, color: AppColors.primaryDark),
+            ),
+          ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -272,10 +262,7 @@ class _TemplateCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDeco.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -345,4 +332,6 @@ class _TemplateCard extends StatelessWidget {
     );
   }
 }
+
+
 

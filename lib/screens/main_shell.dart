@@ -1,4 +1,7 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_services.dart';
 import '../theme.dart';
@@ -91,15 +94,19 @@ class _AnimatedNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     const count = 4;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        border: Border(top: BorderSide(color: Color(0xFFEFE9E0), width: 1)),
-      ),
+      color: Colors.transparent,
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 62,
-          child: LayoutBuilder(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                height: 62,
+                decoration: AppDeco.island(radius: 28),
+                child: LayoutBuilder(
             builder: (context, constraints) {
               final itemW = constraints.maxWidth / count;
               return Stack(
@@ -134,10 +141,13 @@ class _AnimatedNavBar extends StatelessWidget {
                 ],
               );
             },
+              ),
+            ),
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -157,7 +167,10 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -189,4 +202,8 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+
+
+
+
 

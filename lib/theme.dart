@@ -95,3 +95,29 @@ ThemeData buildTheme() {
     ),
   );
 }
+
+/// 设计装饰系统（Taste Skill：柔和阴影 + 悬浮岛容器）。
+class AppDeco {
+  /// 柔和弥散阴影（避免生硬黑边）
+  static const softShadow = [
+    BoxShadow(color: Color(0x14000000), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1)),
+  ];
+
+  /// 悬浮岛容器：半透明白 + 大圆角 + 柔和阴影
+  static BoxDecoration island({double radius = 24}) => BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: softShadow,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+      );
+
+  /// 卡片容器：白底 + 大圆角 + 轻微浮起
+  static BoxDecoration card({double radius = 20}) => BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: const [
+          BoxShadow(color: Color(0x10000000), blurRadius: 18, offset: Offset(0, 6)),
+        ],
+      );
+}

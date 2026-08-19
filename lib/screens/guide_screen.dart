@@ -1,10 +1,12 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../app_services.dart';
 import '../models/place.dart';
 import '../theme.dart';
 import 'location_picker_screen.dart';
+import '../widgets/name_sheet.dart';
 
 /// 场景 → 默认物品（focus=random 时使用）。
 const _sceneItems = <String, List<String>>{
@@ -59,6 +61,7 @@ class _GuideScreenState extends State<GuideScreen> {
   }
 
   Future<void> _pick(int optionIndex) async {
+    HapticFeedback.selectionClick();
     final (key, label) = _questions[_step].options[optionIndex];
     final answers = [..._answers, key];
 
@@ -99,33 +102,13 @@ class _GuideScreenState extends State<GuideScreen> {
     });
   }
 
-  Future<String?> _askCustomName() async {
-    final controller = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('地点名称'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '如：图书馆、学校、医院',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, ''),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
+  Future<String?> _askCustomName() {
+    return showNameSheet(
+      context,
+      title: '地点名称',
+      hint: '如：图书馆、学校、医院',
+      confirm: '确定',
     );
-    return name;
   }
 
   Future<bool> _createPlace(String name, String sceneKey, List<String> answers) async {
@@ -141,7 +124,7 @@ class _GuideScreenState extends State<GuideScreen> {
       final place = services.places.add(Place(
             id: 'p_${DateTime.now().millisecondsSinceEpoch}',
             name: name,
-            address: '',
+            address: picked.address,
             latitude: picked.latitude,
             longitude: picked.longitude,
             radius: 100,
@@ -171,8 +154,30 @@ class _GuideScreenState extends State<GuideScreen> {
     }
     // 通知权限：Android 13+ 需要运行时授权
     if (!mounted) return;
-    await ServicesScope.of(context).notifications.requestPermission();
+    final notifOk =
+        await ServicesScope.of(context).notifications.requestPermission();
     if (!mounted) return;
+    if (!notifOk) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('开启通知'),
+          content: const Text('通知没开启的话，离开围栏时 App 无法提醒你。可以到系统设置里手动打开。'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('暂不')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('去设置')),
+          ],
+        ),
+      );
+      if (go == true) {
+        await Geolocator.openAppSettings();
+      }
+      if (!mounted) return;
+    }
     if (permission == LocationPermission.deniedForever) {
       _toast('定位被拒绝，可在「设置」页再开启');
     } else if (permission == LocationPermission.denied) {
@@ -403,5 +408,7 @@ class _Done extends StatelessWidget {
     );
   }
 }
+
+
 
 

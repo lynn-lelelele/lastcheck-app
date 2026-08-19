@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../app_services.dart';
 import '../theme.dart';
+import '../widgets/island_header.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -51,10 +52,33 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _onRequestNotif() async {
-    final ok = await ServicesScope.of(context).notifications.requestPermission();
+    var ok = await ServicesScope.of(context).notifications.requestPermission();
     await _refreshNotif();
     if (!mounted) return;
-    _toast(ok ? '通知已开启' : '未开启通知');
+    if (ok) {
+      _toast('通知已开启');
+      return;
+    }
+    // 系统弹窗被跳过/已拒绝时，引导去系统设置手动开启
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('手动开启通知'),
+        content: const Text('部分手机需要到系统设置里手动打开通知权限。'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('暂不')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('去系统设置')),
+        ],
+      ),
+    );
+    if (go == true) {
+      await Geolocator.openAppSettings();
+      await _refreshNotif();
+    }
   }
 
   Future<void> _onRequestAuth() async {
@@ -121,7 +145,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         ? (_permission == LocationPermission.always ? '已授权（始终）' : '已授权')
         : '未授权';
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(84),
+        child: const IslandHeader(title: '设置'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -214,10 +241,7 @@ class _SettingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDeco.card(radius: 18),
       child: Row(
         children: [
           Icon(icon, color: AppColors.primary, size: 24),
@@ -244,5 +268,7 @@ class _SettingCard extends StatelessWidget {
     );
   }
 }
+
+
 
 

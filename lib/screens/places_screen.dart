@@ -1,10 +1,13 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_services.dart';
 import '../data/presets.dart';
 import '../models/place.dart';
 import '../theme.dart';
 import 'location_picker_screen.dart';
+import '../widgets/island_header.dart';
+import '../widgets/name_sheet.dart';
 
 class PlacesScreen extends StatefulWidget {
   const PlacesScreen({super.key});
@@ -81,7 +84,7 @@ class _PlacesScreenState extends State<PlacesScreen>
     final place = _svc.places.add(Place(
           id: 'p_${DateTime.now().millisecondsSinceEpoch}',
           name: name,
-          address: '',
+          address: picked.address,
           latitude: picked.latitude,
           longitude: picked.longitude,
           radius: 100,
@@ -90,32 +93,17 @@ class _PlacesScreenState extends State<PlacesScreen>
         ));
     _svc.places.setCurrentPlaceId(place.id);
     _svc.geofence.sync(_svc.places.list());
+    HapticFeedback.lightImpact();
     _load();
     _toast('已添加「$name」');
   }
 
   Future<String?> _askCustomName() {
-    final ctrl = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('地点名称'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '如：图书馆、学校、医院',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
+    return showNameSheet(
+      context,
+      title: '地点名称',
+      hint: '如：图书馆、学校、医院',
+      confirm: '确定',
     );
   }
 
@@ -200,7 +188,10 @@ class _PlacesScreenState extends State<PlacesScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('常去地点')),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(84),
+        child: const IslandHeader(title: '常去地点'),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _onAdd,
         backgroundColor: AppColors.primary,
@@ -245,10 +236,7 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDeco.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -276,7 +264,9 @@ class _PlaceCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${place.latitude.toStringAsFixed(5)}, ${place.longitude.toStringAsFixed(5)}',
+            place.address.isNotEmpty
+                ? place.address
+                : '${place.latitude.toStringAsFixed(5)}, ${place.longitude.toStringAsFixed(5)}',
             style: const TextStyle(color: AppColors.textGrey, fontSize: 13),
           ),
           const SizedBox(height: 12),
@@ -331,5 +321,9 @@ class _TagButton extends StatelessWidget {
     );
   }
 }
+
+
+
+
 
 

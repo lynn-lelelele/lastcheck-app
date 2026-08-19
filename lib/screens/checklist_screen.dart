@@ -1,8 +1,10 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_services.dart';
 import '../models/place.dart';
 import '../services/message_service.dart';
+import '../widgets/island_header.dart';
 import '../theme.dart';
 
 class ChecklistScreen extends StatefulWidget {
@@ -85,6 +87,7 @@ class _ChecklistScreenState extends State<ChecklistScreen>
   }
 
   void _toggleItem(int index) {
+    HapticFeedback.selectionClick();
     final next = Map<int, bool>.from(_checkedMap);
     next[index] = !(next[index] ?? false);
     setState(() => _checkedMap = next);
@@ -97,6 +100,7 @@ class _ChecklistScreenState extends State<ChecklistScreen>
   }
 
   void _checkAll() {
+    HapticFeedback.heavyImpact();
     final next = <int, bool>{for (var i = 0; i < _items.length; i++) i: true};
     setState(() => _checkedMap = next);
     _svc.checklist.setCheckedMap(_currentPlaceId, next);
@@ -119,6 +123,7 @@ class _ChecklistScreenState extends State<ChecklistScreen>
   }
 
   void _manualLeave() {
+    HapticFeedback.heavyImpact();
     if (_current == null) return;
     setState(() {
       _showLeaveCard = true;
@@ -165,23 +170,26 @@ class _ChecklistScreenState extends State<ChecklistScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('出门别忘'),
-        actions: [
-          if (_places.isNotEmpty)
-            IconButton(
-              tooltip: _editMode ? '完成' : '编辑',
-              onPressed: () => setState(() => _editMode = !_editMode),
-              icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  _editMode ? Icons.check_rounded : Icons.edit_outlined,
-                  key: ValueKey(_editMode),
-                  color: AppColors.primaryDark,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(84),
+        child: IslandHeader(
+          title: '出门别忘',
+          actions: [
+            if (_places.isNotEmpty)
+              IconButton(
+                tooltip: _editMode ? '完成' : '编辑',
+                onPressed: () => setState(() => _editMode = !_editMode),
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    _editMode ? Icons.check_rounded : Icons.edit_outlined,
+                    key: ValueKey(_editMode),
+                    color: AppColors.primaryDark,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
       body: Stack(
         children: [
@@ -381,10 +389,7 @@ class _ProgressCard extends StatelessWidget {
     final ratio = total == 0 ? 0.0 : checked / total;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDeco.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -628,4 +633,7 @@ class _CelebrationOverlay extends StatelessWidget {
     );
   }
 }
+
+
+
 
